@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Document Summarizer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <!-- Navigation bar -->
+    <nav class="navbar">
+        <div class="container">
+            <h1 class="logo">📄 AI Doc Summarizer</h1>
+            <p class="subtitle">Upload PDF → Get Summary → Ask Questions</p>
+        </div>
+    </nav>
+
+    <!-- Main content -->
+    <div class="container">
+        <div class="upload-section">
+            <div class="upload-box">
+                <!-- File upload area -->
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">📤</div>
+                    <h2>Upload Your PDF</h2>
+                    <p>Click to select or drag & drop</p>
+                    <input type="file" id="fileInput" accept=".pdf" hidden>
+                </div>
+                
+                <!-- File name display -->
+                <div id="fileName" class="file-name" style="display: none;"></div>
+                
+                <!-- Loading spinner -->
+                <div id="loader" class="loader" style="display: none;">
+                    <div class="spinner"></div>
+                    <p>Processing your PDF... This may take 30-60 seconds</p>
+                </div>
+                
+                <!-- Submit button -->
+                <button id="submitBtn" class="btn btn-primary" style="display: none;">
+                    Summarize PDF
+                </button>
+                
+                <!-- Error message -->
+                <div id="error" class="error-message" style="display: none;"></div>
+            </div>
+
+            <!-- Features list -->
+            <div class="features">
+                <h3>Features:</h3>
+                <ul>
+                    <li>✅ Upload any PDF (normal or scanned)</li>
+                    <li>✅ AI-powered summary in seconds</li>
+                    <li>✅ Ask questions about your document</li>
+                    <li>✅ 100% free & offline</li>
+                    <li>✅ No account required</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>Powered by Hugging Face AI | Free & Open Source</p>
+    </footer>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
