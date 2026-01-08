@@ -1,4 +1,9 @@
-// ===== DOM ELEMENTS (References to HTML elements) =====
+let currentFilename = '';
+let lastBullets = '';
+let lastDetailed = '';
+let lastShort = '';
+
+// DOM elements
 const uploadArea = document.getElementById('uploadArea');
 const fileInput = document.getElementById('fileInput');
 const fileNameDisplay = document.getElementById('fileName');
@@ -6,222 +11,232 @@ const submitBtn = document.getElementById('submitBtn');
 const loader = document.getElementById('loader');
 const errorDiv = document.getElementById('error');
 
-// ===== DRAG AND DROP FUNCTIONALITY =====
+const summarySection = document.getElementById('summarySection');
+const summaryTitle = document.getElementById('summaryTitle');
+const summaryContent = document.getElementById('summaryContent');
+const summaryModeSelect = document.getElementById('summaryMode');
 
-// When user hovers over upload area
+const chatMessages = document.getElementById('chatMessages');
+const qaLoader = document.getElementById('qaLoader');
+const qaError = document.getElementById('qaError');
+const questionInput = document.getElementById('questionInput');
+const askBtn = document.getElementById('askBtn');
+
+// ===== File Upload Handling =====
 uploadArea.addEventListener('dragover', (e) => {
     e.preventDefault();
-    uploadArea.style.backgroundColor = 'rgba(37, 99, 235, 0.15)';
+    uploadArea.classList.add('upload-area-hover');
 });
-
-// When user leaves upload area
 uploadArea.addEventListener('dragleave', () => {
-    uploadArea.style.backgroundColor = 'rgba(37, 99, 235, 0.05)';
+    uploadArea.classList.remove('upload-area-hover');
 });
-
-// When user drops file
 uploadArea.addEventListener('drop', (e) => {
     e.preventDefault();
-    uploadArea.style.backgroundColor = 'rgba(37, 99, 235, 0.05)';
-    
-    // Get dropped files
+    uploadArea.classList.remove('upload-area-hover');
     const files = e.dataTransfer.files;
     if (files.length > 0) {
-        fileInput.files = files;  // Set as selected file
+        fileInput.files = files;
         handleFileSelect();
     }
 });
-
-// When user clicks to select file
-uploadArea.addEventListener('click', () => {
-    fileInput.click();
-});
-
-// When file is selected (click or drag)
+uploadArea.addEventListener('click', () => fileInput.click());
 fileInput.addEventListener('change', handleFileSelect);
 
-// ===== HANDLE FILE SELECTION =====
 function handleFileSelect() {
-    const file = fileInput.files;
-    
-    // Validate file
+    const file = fileInput.files[0];
     if (!file) return;
-    
+
     if (file.type !== 'application/pdf') {
         showError('❌ Please upload a PDF file');
         return;
     }
-    
-    const maxSize = 20 * 1024 * 1024;  // 20MB
+    const maxSize = 20 * 1024 * 1024;
     if (file.size > maxSize) {
-        showError('❌ File too large. Maximum 20MB allowed.');
+        showError('❌ File too large (max 20MB)');
         return;
     }
-    
-    // Show file name
+
     fileNameDisplay.textContent = `✅ Selected: ${file.name}`;
     fileNameDisplay.style.display = 'block';
-    submitBtn.style.display = 'block';
+    submitBtn.style.display = 'inline-block';
     errorDiv.style.display = 'none';
+    summarySection.style.display = 'none';
+
+    // Clear previous state
+    lastBullets = '';
+    lastDetailed = '';
+    lastShort = '';
+    currentFilename = '';
+    summaryContent.textContent = '';
 }
 
-// ===== SUBMIT BUTTON HANDLER =====
 submitBtn.addEventListener('click', uploadFile);
 
 async function uploadFile() {
-    const file = fileInput.files;
+    const file = fileInput.files[0];
     if (!file) return;
-    
-    // Create FormData (special format for sending files)
+
     const formData = new FormData();
     formData.append('pdf', file);
-    
-    // Show loading spinner
+
     loader.style.display = 'block';
     submitBtn.style.display = 'none';
     errorDiv.style.display = 'none';
-    
+
     try {
-        // Send file to backend (/upload endpoint)
-        const response = await fetch('/upload', {
+        const res = await fetch('/upload', {
             method: 'POST',
             body: formData
         });
-        
-        // Parse response as JSON
-        const data = await response.json();
-        
+        const data = await res.json();
+
         if (data.success) {
-            // Success! Save data and redirect to results page
-            sessionStorage.setItem('summary', data.summary);
-            sessionStorage.setItem('fullText', data.full_text);
-            
-            // Redirect to results page
-            window.location.href = '/results';
+            currentFilename = data.filename || '';
+
+            lastBullets = data.summary_bullets || '';
+            lastDetailed = data.summary_detailed || '';
+            lastShort = data.summary_short || '';
+
+            // Show the initial summary based on dropdown
+            showSelectedSummary();
+
+            summarySection.style.display = 'block';
         } else {
-            showError(`❌ ${data.error}`);
-            loader.style.display = 'none';
-            submitBtn.style.display = 'block';
+            showError('❌ ' + (data.error || 'Unknown error'));
+            submitBtn.style.display = 'inline-block';
         }
-    } catch (error) {
-        showError(`❌ Error: ${error.message}`);
+    } catch (err) {
+        showError('❌ Error: ' + err.message);
+        submitBtn.style.display = 'inline-block';
+    } finally {
         loader.style.display = 'none';
-        submitBtn.style.display = 'block';
     }
 }
 
-// ===== RESULTS PAGE LOGIC =====
+// ===== Summary Mode Handling =====
+summaryModeSelect.addEventListener('change', showSelectedSummary);
 
-// When page loads, check if we have summary data
-window.addEventListener('DOMContentLoaded', () => {
-    const summary = sessionStorage.getItem('summary');
-    const fullText = sessionStorage.getItem('fullText');
-    
-    if (summary && document.getElementById('summary')) {
-        // We're on results page - display summary
-        document.getElementById('summary').textContent = summary;
-        document.getElementById('preview').textContent = fullText;
-        
-        // Clear session storage
-        sessionStorage.removeItem('summary');
-        sessionStorage.removeItem('fullText');
+function showSelectedSummary() {
+    const mode = summaryModeSelect.value;
+    let text = '';
+    let title = '';
+
+    if (mode === 'bullets') {
+        text = lastBullets || 'No bullet summary available.';
+        title = '• Bullet Point Summary';
+    } else if (mode === 'short') {
+        text = lastShort || 'No short overview available.';
+        title = '🔎 Short Overview';
+    } else {
+        text = lastDetailed || 'No detailed overview available.';
+        title = '📄 Detailed Overview';
     }
+
+    summaryTitle.textContent = title;
+    summaryContent.textContent = text;
+
+    // Optional: highlight current tab buttons if you use them
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        if (btn.dataset.mode === mode) {
+            btn.classList.add('tab-btn-active');
+        } else {
+            btn.classList.remove('tab-btn-active');
+        }
+    });
+}
+
+// Tab buttons (bottom of summary section)
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const mode = btn.dataset.mode;
+        summaryModeSelect.value = mode;
+        showSelectedSummary();
+    });
 });
 
-// ===== QUESTION ANSWERING =====
+// ===== Chat QA Handling =====
+askBtn.addEventListener('click', askQuestion);
+questionInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        askQuestion();
+    }
+});
 
 async function askQuestion() {
-    const questionInput = document.getElementById('questionInput');
     const question = questionInput.value.trim();
-    const fullText = document.getElementById('preview').textContent;
-    
-    if (!question) {
-        alert('Please ask a question');
+    if (!currentFilename) {
+        alert('Please upload a PDF and generate a summary first.');
         return;
     }
-    
-    // Show loading
-    document.getElementById('qaLoader').style.display = 'block';
-    document.getElementById('qaError').style.display = 'none';
-    
+    if (!question) {
+        alert('Please type a question.');
+        return;
+    }
+
+    qaLoader.style.display = 'block';
+    qaError.style.display = 'none';
+
+    // Add user message to chat
+    addChatMessage('user', question);
+
     try {
-        // Send question to backend (/ask endpoint)
-        const response = await fetch('/ask', {
+        const res = await fetch('/ask', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: {'Content-Type': 'application/json'},
             body: JSON.stringify({
                 question: question,
-                context: fullText
+                filename: currentFilename
             })
         });
-        
-        const data = await response.json();
-        
+        const data = await res.json();
+
         if (data.success) {
-            // Display Q&A in chat
-            const chatMessages = document.getElementById('chatMessages');
-            
-            // Add question
-            const qDiv = document.createElement('div');
-            qDiv.className = 'chat-message message-question';
-            qDiv.innerHTML = `
-                <div class="message-label">❓ Your Question:</div>
-                <div class="message-text">${question}</div>
-            `;
-            chatMessages.appendChild(qDiv);
-            
-            // Add answer
-            const aDiv = document.createElement('div');
-            aDiv.className = 'chat-message message-answer';
-            aDiv.innerHTML = `
-                <div class="message-label">✅ Answer (Confidence: ${data.confidence}%):</div>
-                <div class="message-text">${data.answer}</div>
-            `;
-            chatMessages.appendChild(aDiv);
-            
-            // Scroll to latest message
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-            
-            // Clear input
+            addChatMessage('assistant', data.answer || 'No answer returned.');
             questionInput.value = '';
         } else {
-            showQAError(`❌ ${data.error}`);
+            showQAError('❌ ' + (data.error || 'Unknown error'));
         }
-    } catch (error) {
-        showQAError(`❌ Error: ${error.message}`);
+    } catch (err) {
+        showQAError('❌ Error: ' + err.message);
     } finally {
-        document.getElementById('qaLoader').style.display = 'none';
+        qaLoader.style.display = 'none';
     }
 }
 
-// Enter key to submit
-document.addEventListener('DOMContentLoaded', () => {
-    const questionInput = document.getElementById('questionInput');
-    if (questionInput) {
-        questionInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                askQuestion();
-            }
-        });
-    }
-});
+function addChatMessage(role, text) {
+    const msgDiv = document.createElement('div');
+    msgDiv.classList.add('chat-message');
+    msgDiv.classList.add(role === 'user' ? 'message-question' : 'message-answer');
 
-// ===== ERROR DISPLAY FUNCTIONS =====
+    const label = document.createElement('div');
+    label.classList.add('message-label');
+    label.textContent = role === 'user' ? '🧑 You' : '🤖 sunny';
 
+    const body = document.createElement('div');
+    body.classList.add('message-text');
+    body.innerHTML = escapeHtml(text).replace(/\n/g, '<br>');
+
+    msgDiv.appendChild(label);
+    msgDiv.appendChild(body);
+    chatMessages.appendChild(msgDiv);
+
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+// ===== Helpers =====
 function showError(message) {
-    const errorDiv = document.getElementById('error');
-    if (errorDiv) {
-        errorDiv.textContent = message;
-        errorDiv.style.display = 'block';
-    }
+    errorDiv.textContent = message;
+    errorDiv.style.display = 'block';
 }
 
 function showQAError(message) {
-    const qaError = document.getElementById('qaError');
-    if (qaError) {
-        qaError.textContent = message;
-        qaError.style.display = 'block';
-    }
+    qaError.textContent = message;
+    qaError.style.display = 'block';
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }

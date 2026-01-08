@@ -3,65 +3,117 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Document Summarizer</title>
+    <title>AI PDF Assistant</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <!-- Navigation bar -->
-    <nav class="navbar">
-        <div class="container">
-            <h1 class="logo">📄 AI Doc Summarizer</h1>
-            <p class="subtitle">Upload PDF → Get Summary → Ask Questions</p>
+    <div class="bg-gradient"></div>
+
+    <nav class="navbar glass">
+        <div class="container nav-inner">
+            <div>
+                <h1 class="logo">AI PDF Assistant</h1>
+                <p class="subtitle">Smart summaries & interactive chat for your documents</p>
+            </div>
         </div>
     </nav>
 
-    <!-- Main content -->
-    <div class="container">
-        <div class="upload-section">
+    <main class="container main-grid">
+        <!-- Left: Upload & Summary -->
+        <section class="panel glass slide-up">
+            <h2 class="panel-title">1. Upload PDF & Generate Summary</h2>
+            <p class="panel-subtitle">
+                Drop in any PDF (notes, articles, reports) and instantly get a clean summary.
+            </p>
+
             <div class="upload-box">
-                <!-- File upload area -->
                 <div class="upload-area" id="uploadArea">
-                    <div class="upload-icon">📤</div>
-                    <h2>Upload Your PDF</h2>
-                    <p>Click to select or drag & drop</p>
+                    <div class="upload-glow"></div>
+                    <div class="upload-icon">📥</div>
+                    <h3>Drop your PDF here</h3>
+                    <p>or click to browse from your computer</p>
                     <input type="file" id="fileInput" accept=".pdf" hidden>
                 </div>
-                
-                <!-- File name display -->
-                <div id="fileName" class="file-name" style="display: none;"></div>
-                
-                <!-- Loading spinner -->
-                <div id="loader" class="loader" style="display: none;">
-                    <div class="spinner"></div>
-                    <p>Processing your PDF... This may take 30-60 seconds</p>
+
+                <div id="fileName" class="file-name" style="display:none;"></div>
+
+                <div class="summary-controls">
+                    <label for="summaryMode" class="summary-label">Summary type:</label>
+                    <select id="summaryMode" class="summary-select">
+                        <option value="bullets">• Bullet point summary</option>
+                        <option value="short">🔎 Short overview</option>
+                        <option value="detailed">📄 Detailed overview</option>
+                    </select>
                 </div>
-                
-                <!-- Submit button -->
-                <button id="submitBtn" class="btn btn-primary" style="display: none;">
-                    Summarize PDF
+
+                <div id="loader" class="loader" style="display:none;">
+                    <div class="spinner"></div>
+                    <p>Analyzing your document...</p>
+                </div>
+
+                <button id="submitBtn" class="btn btn-primary" style="display:none;">
+                    ✨ Generate Summary
                 </button>
-                
-                <!-- Error message -->
-                <div id="error" class="error-message" style="display: none;"></div>
+
+                <div id="error" class="error-message" style="display:none;"></div>
             </div>
 
-            <!-- Features list -->
-            <div class="features">
-                <h3>Features:</h3>
-                <ul>
-                    <li>✅ Upload any PDF (normal or scanned)</li>
-                    <li>✅ AI-powered summary in seconds</li>
-                    <li>✅ Ask questions about your document</li>
-                    <li>✅ 100% free & offline</li>
-                    <li>✅ No account required</li>
-                </ul>
+            <div id="summarySection" class="summary-section" style="display:none;">
+                <div class="summary-header">
+                    <h3 id="summaryTitle" class="summary-title">Summary</h3>
+                    <div class="summary-tabs">
+                        <button class="tab-btn" data-mode="bullets">• Bullets</button>
+                        <button class="tab-btn" data-mode="short">Short</button>
+                        <button class="tab-btn" data-mode="detailed">Detailed</button>
+                    </div>
+                </div>
+                <pre id="summaryContent" class="summary-content"></pre>
             </div>
-        </div>
-    </div>
+        </section>
 
-    <!-- Footer -->
-    <footer class="footer">
-        <p>Powered by Hugging Face AI | Free & Open Source</p>
+        <!-- Right: QA Chat -->
+        <section class="panel glass slide-up delay-1">
+            <h2 class="panel-title">2. Chat with your PDF</h2>
+            <p class="panel-subtitle">
+                Ask questions like “What is the main conclusion?” or “List the key points of section 3”.
+            </p>
+
+            <div class="chat-box">
+                <div id="chatMessages" class="chat-messages">
+                    <div class="chat-message message-info">
+                        <div class="message-label">Sunny</div>
+                        <div class="message-text">
+                            Start by uploading a PDF on the left. Then ask anything about it here.
+                        </div>
+                    </div>
+                </div>
+
+                <div id="qaLoader" class="loader" style="display:none;">
+                    <div class="spinner"></div>
+                    <p>Thinking...</p>
+                </div>
+
+                <div class="chat-input-area">
+                    <input
+                        type="text"
+                        id="questionInput"
+                        class="chat-input"
+                        placeholder="Type your question and press Enter..."
+                    >
+                    <button id="askBtn" class="btn btn-accent">Ask</button>
+                </div>
+
+                <div id="qaError" class="error-message" style="display:none;"></div>
+
+                <div class="chat-footer-note">
+                    Answers are generated only from the uploaded document text.
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer glass">
+        <p>AI PDF Assistant · Built with Python & Flask</p>
     </footer>
 
     <script src="{{ url_for('static', filename='script.js') }}"></script>
